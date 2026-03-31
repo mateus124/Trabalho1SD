@@ -1,6 +1,6 @@
 package br.ufc.quixada.chat.core.model;
 
-import br.ufc.quixada.chat.core.interface.ChatInterface;
+import br.ufc.quixada.chat.core.interfaces.ChatInterface;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

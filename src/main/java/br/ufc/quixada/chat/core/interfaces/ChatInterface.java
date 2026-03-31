@@ -1,4 +1,4 @@
-package br.ufc.quixada.chat.core.interface;
+package br.ufc.quixada.chat.core.interfaces;
 
 import br.ufc.quixada.chat.core.model.Message;
 import br.ufc.quixada.chat.core.model.User;
