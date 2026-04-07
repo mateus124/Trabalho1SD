@@ -1,7 +1,10 @@
 package br.ufc.quixada.chat.core.model;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.List;
 
 public class TesteStreams {
@@ -23,43 +26,53 @@ public class TesteStreams {
         try (FileInputStream fileIn = new FileInputStream("dados_chat.bin")) {
             MessageInputStream customIn = new MessageInputStream(fileIn);
             List<Message> lidas = customIn.lerDados(tamanhos);
-            
-            System.out.println("Mensagens lidas do arquivo:");
-            lidas.forEach(msg -> System.out.println("Enviado por " + msg.getRemetenteId() + ": " + msg.getConteudo()));
+
+            validarMensagens(mensagens, lidas, "arquivo");
+            System.out.println("OK: mensagens lidas do arquivo com sucesso.");
         }
 
-        System.out.println("\n--- TESTE 2: Saída padrão (System.out) ---");
+        System.out.println("\n--- TESTE 2: System.out / System.in ---");
+        ByteArrayOutputStream bufferBytes = new ByteArrayOutputStream();
+        MessageOutputStream customOutMemoria = new MessageOutputStream(mensagens, 2, tamanhos, bufferBytes);
+        customOutMemoria.enviarDados();
+
+        // Simula escrita via System.out para visualização (bytes binários podem ficar ilegíveis).
         MessageOutputStream customOutConsole = new MessageOutputStream(mensagens, 2, tamanhos, System.out);
         customOutConsole.enviarDados();
-        System.out.println("\nDados enviados para o console!");
+        System.out.println("\nBytes também enviados para System.out.");
 
-        System.out.println("\n--- TESTE 3: Leitura simulada de System.in ---");
-        System.out.println("Dica: Para ler do System.in de verdade, você precisaria digitar exatamente os blocos de bytes.");
-        System.out.println("No teste real, passamos 'System.in' no construtor de MessageInputStream.");
+        ByteArrayInputStream entradaSimulada = new ByteArrayInputStream(bufferBytes.toByteArray());
+        InputStream entradaOriginal = System.in;
 
-
-        System.out.println("\n--- TESTE 4: Servidor Remoto (TCP Socket) ---");
-        System.out.println("Exemplo de como passar o socket:");
-        System.out.println("// No cliente (Item 5 do checklist):");
-        System.out.println("// Socket socket = new Socket(\"localhost\", 12345);");
-        System.out.println("// MessageOutputStream outRede = new MessageOutputStream(mensagens, 2, tamanhos, socket.getOutputStream());");
-        System.out.println("// outRede.enviarDados();");
-
-        System.out.println("\n--- TESTE 3: Lendo de System.in (Entrada Padrão) ---");
-        System.out.println("Aguardando bytes via System.in...");
-
-
-        MessageInputStream inputPadrao = new MessageInputStream(System.in);
         try {
+            System.setIn(entradaSimulada);
+            MessageInputStream inputPadrao = new MessageInputStream(System.in);
             List<Message> lidasIn = inputPadrao.lerDados(tamanhos);
-        if (!lidasIn.isEmpty()) {
-        System.out.println("Sucesso! Mensagens lidas do System.in:");
-        lidasIn.forEach(m -> System.out.println(" -> " + m.getConteudo()));
-        } else {
-        System.out.println("Nenhum dado lido. (Certifique-se de usar o '<' no terminal)");
+            validarMensagens(mensagens, lidasIn, "System.in");
+            System.out.println("OK: mensagens lidas com sucesso via System.in.");
+        } finally {
+            System.setIn(entradaOriginal);
+        }
     }
-} catch (Exception e) {
-    System.out.println("Fim da leitura ou erro no buffer.");
-}
+
+    private static void validarMensagens(Message[] esperadas, List<Message> lidas, String origem) {
+        if (lidas.size() != esperadas.length) {
+            throw new IllegalStateException("Falha no teste de " + origem + ": quantidade de mensagens diferente.");
+        }
+
+        for (int i = 0; i < esperadas.length; i++) {
+            Message esperada = esperadas[i];
+            Message atual = lidas.get(i);
+
+            if (!esperada.getId().equals(atual.getId())) {
+                throw new IllegalStateException("Falha no teste de " + origem + ": id diferente no índice " + i);
+            }
+            if (!esperada.getRemetenteId().equals(atual.getRemetenteId())) {
+                throw new IllegalStateException("Falha no teste de " + origem + ": remetenteId diferente no índice " + i);
+            }
+            if (!esperada.getConteudo().equals(atual.getConteudo())) {
+                throw new IllegalStateException("Falha no teste de " + origem + ": conteúdo diferente no índice " + i);
+            }
+        }
     }
 }

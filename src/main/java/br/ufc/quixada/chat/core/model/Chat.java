@@ -1,6 +1,7 @@
 package br.ufc.quixada.chat.core.model;
 
 import br.ufc.quixada.chat.core.interfaces.ChatInterface;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -8,10 +9,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-public abstract class Chat implements ChatInterface {
-    private final String id;
-    protected final Set<User> participantes;
-    protected final List<Message> messages;
+public abstract class Chat implements ChatInterface, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private String id;
+    protected Set<User> participantes;
+    protected List<Message> messages;
 
     protected Chat(Set<User> participantes) {
         this.id = UUID.randomUUID().toString();
@@ -23,8 +26,24 @@ public abstract class Chat implements ChatInterface {
         return id;
     }
 
+    public void setId(String id) {
+        this.id = Objects.requireNonNull(id, "id não pode ser nulo");
+    }
+
     public Set<User> getParticipantes() {
         return Collections.unmodifiableSet(participantes);
+    }
+
+    public void setParticipantes(Set<User> participantes) {
+        this.participantes = Objects.requireNonNull(participantes, "participantes não pode ser nulo");
+    }
+
+    public List<Message> getMessages() {
+        return Collections.unmodifiableList(messages);
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = Objects.requireNonNull(messages, "messages não pode ser nulo");
     }
 
     @Override

@@ -1,10 +1,13 @@
 package br.ufc.quixada.chat.core.model;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-public class GroupChat extends Chat {
+public class GroupChat extends Chat implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public GroupChat(Set<User> usuariosIniciais) {
         super(new HashSet<>(Objects.requireNonNull(usuariosIniciais, "usuariosIniciais não pode ser nulo")));
 

@@ -1,10 +1,13 @@
 package br.ufc.quixada.chat.core.model;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-public class SingleChat extends Chat {
+public class SingleChat extends Chat implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private static final int LIMITE_PARTICIPANTES = 2;
 
     public SingleChat(User userA, User userB) {

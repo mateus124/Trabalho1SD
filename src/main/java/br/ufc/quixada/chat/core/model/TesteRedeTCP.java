@@ -17,7 +17,19 @@ public class TesteRedeTCP {
                      MessageInputStream mis = new MessageInputStream(socket.getInputStream())) {
                     
                     List<Message> recebidas = mis.lerDados(tamanhos);
-                    System.out.println("[Servidor] Mensagem recebida via rede: " + recebidas.get(0).getConteudo());
+                    if (recebidas.size() != 1) {
+                        throw new IllegalStateException("[Servidor] Quantidade de mensagens inválida.");
+                    }
+
+                    Message recebida = recebidas.get(0);
+                    if (!"user-rede".equals(recebida.getRemetenteId())) {
+                        throw new IllegalStateException("[Servidor] remetenteId inválido.");
+                    }
+                    if (!"Olá via TCP!".equals(recebida.getConteudo())) {
+                        throw new IllegalStateException("[Servidor] conteúdo inválido.");
+                    }
+
+                    System.out.println("[Servidor] OK: mensagem recebida via rede e validada.");
                 }
             } catch (IOException e) { e.printStackTrace(); }
         });
