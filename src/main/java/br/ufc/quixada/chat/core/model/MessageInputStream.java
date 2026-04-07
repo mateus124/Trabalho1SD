@@ -22,11 +22,12 @@ public class MessageInputStream extends InputStream {
         if (quantidade == -1) return mensagensLidas; 
 
         for (int i = 0; i < quantidade; i++) {
-            String id = lerStringFixa(tamanhosAtributos[0]);
-            String remetenteId = lerStringFixa(tamanhosAtributos[1]);
-            String conteudo = lerStringFixa(tamanhosAtributos[2]);
+            String id = lerStringFixa(tamanhosAtributos[0]).trim();
+            String remetenteId = lerStringFixa(tamanhosAtributos[1]).trim();
+            String nome = lerStringFixa(tamanhosAtributos[2]).trim(); 
+            String conteudo = lerStringFixa(tamanhosAtributos[3]).replace("\0", "");
 
-            Message msg = new Message(id, remetenteId, "Nome_Recuperado", conteudo, LocalDateTime.now());
+            Message msg = new Message(id, remetenteId, nome, conteudo, LocalDateTime.now());
             
             mensagensLidas.add(msg);
         }
@@ -41,17 +42,18 @@ public class MessageInputStream extends InputStream {
         while (totalLido < tamanho) {
             int bytesLidos = in.read(buffer, totalLido, tamanho - totalLido);
             if (bytesLidos == -1) {
-                throw new IOException("Fim de fluxo inesperado!");
+                if (totalLido == 0) return ""; 
+                throw new IOException("Fim de fluxo inesperado ao ler atributo!");
             }
             totalLido += bytesLidos;
         }
         
-        return new String(buffer, StandardCharsets.UTF_8).trim();
+        return new String(buffer, StandardCharsets.UTF_8);
     }
 
     private void validarLayout(int[] tamanhosAtributos) {
-        if (tamanhosAtributos == null || tamanhosAtributos.length < 3) {
-            throw new IllegalArgumentException("Layout inválido: esperado [id, remetenteId, conteudo]");
+        if (tamanhosAtributos == null || tamanhosAtributos.length < 4) {
+            throw new IllegalArgumentException("Layout inválido: esperado [id, remetenteId, nome, conteudo]");
         }
     }
 

@@ -27,12 +27,16 @@ public class MessageOutputStream extends OutputStream {
 
             escreverStringFixa(msg.getRemetenteId(), tamanhosAtributos[1]);
 
-            escreverStringFixa(msg.getConteudo(), tamanhosAtributos[2]);
+            escreverStringFixa(msg.getRemetenteNome(), tamanhosAtributos[2]);
+
+            escreverStringFixa(msg.getConteudo(), tamanhosAtributos[3]);
         }
         out.flush(); 
     }
 
     private void escreverStringFixa(String valor, int tamanho) throws IOException {
+        if (valor == null) valor = "";
+        
         byte[] bytes = valor.getBytes(StandardCharsets.UTF_8);
         byte[] buffer = new byte[tamanho];
         

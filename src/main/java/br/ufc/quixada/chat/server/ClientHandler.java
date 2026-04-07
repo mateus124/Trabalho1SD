@@ -9,57 +9,52 @@ import java.util.List;
 
 public class ClientHandler implements Runnable {
     private final Socket socket;
-    private final ChatServer chatServer;
+    private final ChatServer servidor;
     private final int[] tamanhosAtributos;
 
-    public ClientHandler(Socket socket, ChatServer chatServer, int[] tamanhosAtributos) {
+    public ClientHandler(Socket socket, ChatServer servidor, int[] tamanhosAtributos) {
         this.socket = socket;
-        this.chatServer = chatServer;
-        this.tamanhosAtributos = tamanhosAtributos;
+        this.servidor = servidor;
+        this.tamanhosAtributos = tamanhosAtributos; // Garanta que isso tem 4 posições
     }
 
     @Override
     public void run() {
-        try (MessageInputStream input = new MessageInputStream(socket.getInputStream())) {
+        try {
+            MessageInputStream input = new MessageInputStream(socket.getInputStream());
+            
             while (!socket.isClosed()) {
-                List<Message> recebidas = input.lerDados(tamanhosAtributos);
-
-                if (recebidas.isEmpty()) {
-                    break;
-                }
-
-                for (Message message : recebidas) {
-                    chatServer.distribuirParaOutros(message, this);
+                // Aqui é onde o erro acontecia se o array tivesse apenas 3 posições
+                List<Message> mensagens = input.lerDados(tamanhosAtributos);
+                
+                for (Message msg : mensagens) {
+                    servidor.distribuirParaOutros(msg, this);
                 }
             }
         } catch (IOException e) {
-            System.out.println("[Servidor] Falha no cliente " + socket.getRemoteSocketAddress() + ": " + e.getMessage());
-        } finally {
-            fecharConexao();
-            chatServer.removerCliente(this);
             System.out.println("[Servidor] Cliente desconectado: " + socket.getRemoteSocketAddress());
+        } finally {
+            servidor.removerCliente(this);
+            fecharSocket();
         }
     }
 
-    public synchronized void enviarMensagem(Message message) {
+    public void enviarMensagem(Message message) {
         try {
-            Message[] mensagens = {message};
-            MessageOutputStream output = new MessageOutputStream(mensagens, 1, tamanhosAtributos, socket.getOutputStream());
+            Message[] msgs = {message};
+            // Aqui também passamos o array de 4 posições
+            MessageOutputStream output = new MessageOutputStream(msgs, 1, tamanhosAtributos, socket.getOutputStream());
             output.enviarDados();
         } catch (IOException e) {
-            System.out.println("[Servidor] Erro ao enviar para " + socket.getRemoteSocketAddress() + ": " + e.getMessage());
-            fecharConexao();
-            chatServer.removerCliente(this);
+            fecharSocket();
         }
     }
 
-    private void fecharConexao() {
-        if (!socket.isClosed()) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                System.out.println("[Servidor] Erro ao fechar socket: " + e.getMessage());
-            }
+    private void fecharSocket() {
+        try {
+            if (!socket.isClosed()) socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
