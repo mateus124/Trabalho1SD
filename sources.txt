@@ -1,0 +1,13 @@
+src/main/java/br/ufc/quixada/chat/server/ChatServer.java
+src/main/java/br/ufc/quixada/chat/server/ClientHandler.java
+src/main/java/br/ufc/quixada/chat/core/model/User.java
+src/main/java/br/ufc/quixada/chat/core/model/Message.java
+src/main/java/br/ufc/quixada/chat/core/model/MessageOutputStream.java
+src/main/java/br/ufc/quixada/chat/core/model/SingleChat.java
+src/main/java/br/ufc/quixada/chat/core/model/GroupChat.java
+src/main/java/br/ufc/quixada/chat/core/model/MessageInputStream.java
+src/main/java/br/ufc/quixada/chat/core/model/Chat.java
+src/main/java/br/ufc/quixada/chat/core/model/TesteRedeTCP.java
+src/main/java/br/ufc/quixada/chat/core/model/TesteStreams.java
+src/main/java/br/ufc/quixada/chat/core/interfaces/ChatInterface.java
+src/main/java/br/ufc/quixada/chat/client/ChatClient.java
