@@ -17,7 +17,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ChatServer {
     private static final int PORTA_PADRAO = 12345;
-
     private final int porta;
     private final List<ClientHandler> clientes;
     private final Map<String, ClientHandler> clientesPorUsuarioId;

@@ -29,10 +29,9 @@ public class ChatClient {
         String host = args.length > 0 ? args[0] : HOST_PADRAO;
         int porta = args.length > 1 ? Integer.parseInt(args[1]) : PORTA_PADRAO;
 
-        System.out.println("=== BEM-VINDO AO CHAT ===");
-        System.out.print("Digite seu nome para entrar: ");
+        System.out.println("=== BEM-VINDO AO M2TALK ===");
+        System.out.print("Digite seu nome: ");
         String nome = scanner.nextLine();
-        
         User usuarioAtivo = new User(nome);
         Map<String, CompletableFuture<ChatPacket>> pendencias = new ConcurrentHashMap<>();
         boolean executando = true;
@@ -84,7 +83,6 @@ public class ChatClient {
             System.out.println("Erro ao trocar mensagens com o servidor: " + e.getMessage());
         } finally {
             scanner.close();
-            System.out.println("Chat encerrado.");
         }
     }
 
