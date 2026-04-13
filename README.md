@@ -4,7 +4,7 @@ Dupla: Francisco Mateus | Mateus Dodo
 
 ## Aplicacao
 
-Sistema de Chat Web via WebSocket.
+Sistema de chat via TCP com serializacao de objetos usando ObjectOutputStream e ObjectInputStream.
 
 ## Repositorio Core
 
@@ -50,3 +50,6 @@ ChatInterface define:
 - O Chat e abstrato e concentra comportamento comum para mensagens.
 - SingleChat limita o chat a dois participantes.
 - GroupChat gerencia participantes de forma dinamica.
+- O protocolo de rede usa ChatPacket com request/reply para empacotar e desempacotar mensagens.
+- O cliente em terminal oferece broadcast, listagem de conectados, chat privado e entrada em grupos predefinidos.
+- Os grupos iniciais sao `geral`, `turma` e `projeto`.

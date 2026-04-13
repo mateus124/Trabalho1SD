@@ -2,77 +2,53 @@ package br.ufc.quixada.chat.core.model;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.List;
 
 public class TesteStreams {
     public static void main(String[] args) throws Exception {
         Message m1 = new Message("user1", "Chico", "Olá, tudo bem?");
-        Message m2 = new Message("user2", "Dodó", "Tudo certo!");
-        Message[] mensagens = {m1, m2};
+        ChatPacket request = ChatPacket.request(m1);
+        ChatPacket reply = ChatPacket.reply(m1.getId(), "Mensagem recebida pelo servidor");
 
-        int[] tamanhos = {36, 36, 64};
-
-        System.out.println("--- TESTE 1: Gravando e lendo em arquivo ---");
-        
-        try (FileOutputStream fileOut = new FileOutputStream("dados_chat.bin")) {
-            MessageOutputStream customOut = new MessageOutputStream(mensagens, 2, tamanhos, fileOut);
-            customOut.enviarDados();    
-            System.out.println("Dados salvos em dados_chat.bin!");
-        }
-
-        try (FileInputStream fileIn = new FileInputStream("dados_chat.bin")) {
-            MessageInputStream customIn = new MessageInputStream(fileIn);
-            List<Message> lidas = customIn.lerDados(tamanhos);
-
-            validarMensagens(mensagens, lidas, "arquivo");
-            System.out.println("OK: mensagens lidas do arquivo com sucesso.");
-        }
-
-        System.out.println("\n--- TESTE 2: System.out / System.in ---");
+        System.out.println("--- TESTE 1: Request/Reply em memória ---");
         ByteArrayOutputStream bufferBytes = new ByteArrayOutputStream();
-        MessageOutputStream customOutMemoria = new MessageOutputStream(mensagens, 2, tamanhos, bufferBytes);
-        customOutMemoria.enviarDados();
+        try (MessageOutputStream saida = new MessageOutputStream(bufferBytes)) {
+            saida.enviarPacote(request);
+            saida.enviarPacote(reply);
+            System.out.println("Pacotes serializados em memória.");
+        }
 
-        // Simula escrita via System.out para visualização (bytes binários podem ficar ilegíveis).
-        MessageOutputStream customOutConsole = new MessageOutputStream(mensagens, 2, tamanhos, System.out);
-        customOutConsole.enviarDados();
-        System.out.println("\nBytes também enviados para System.out.");
+        try (ByteArrayInputStream entradaSimulada = new ByteArrayInputStream(bufferBytes.toByteArray());
+             MessageInputStream entrada = new MessageInputStream(entradaSimulada)) {
+            ChatPacket requestLida = entrada.lerPacote();
+            ChatPacket replyLida = entrada.lerPacote();
 
-        ByteArrayInputStream entradaSimulada = new ByteArrayInputStream(bufferBytes.toByteArray());
-        InputStream entradaOriginal = System.in;
-
-        try {
-            System.setIn(entradaSimulada);
-            MessageInputStream inputPadrao = new MessageInputStream(System.in);
-            List<Message> lidasIn = inputPadrao.lerDados(tamanhos);
-            validarMensagens(mensagens, lidasIn, "System.in");
-            System.out.println("OK: mensagens lidas com sucesso via System.in.");
-        } finally {
-            System.setIn(entradaOriginal);
+            validarRequest(request, requestLida);
+            validarReply(reply, replyLida);
+            System.out.println("OK: request/reply serializados e desserializados com sucesso.");
         }
     }
 
-    private static void validarMensagens(Message[] esperadas, List<Message> lidas, String origem) {
-        if (lidas.size() != esperadas.length) {
-            throw new IllegalStateException("Falha no teste de " + origem + ": quantidade de mensagens diferente.");
+    private static void validarRequest(ChatPacket esperada, ChatPacket atual) {
+        if (!atual.isRequest()) {
+            throw new IllegalStateException("Falha no teste de request: tipo incorreto.");
         }
+        if (!esperada.getMensagem().equals(atual.getMensagem())) {
+            throw new IllegalStateException("Falha no teste de request: mensagem diferente.");
+        }
+        if (!esperada.getCorrelacaoId().equals(atual.getCorrelacaoId())) {
+            throw new IllegalStateException("Falha no teste de request: correlação diferente.");
+        }
+    }
 
-        for (int i = 0; i < esperadas.length; i++) {
-            Message esperada = esperadas[i];
-            Message atual = lidas.get(i);
-
-            if (!esperada.getId().equals(atual.getId())) {
-                throw new IllegalStateException("Falha no teste de " + origem + ": id diferente no índice " + i);
-            }
-            if (!esperada.getRemetenteId().equals(atual.getRemetenteId())) {
-                throw new IllegalStateException("Falha no teste de " + origem + ": remetenteId diferente no índice " + i);
-            }
-            if (!esperada.getConteudo().equals(atual.getConteudo())) {
-                throw new IllegalStateException("Falha no teste de " + origem + ": conteúdo diferente no índice " + i);
-            }
+    private static void validarReply(ChatPacket esperada, ChatPacket atual) {
+        if (!atual.isReply()) {
+            throw new IllegalStateException("Falha no teste de reply: tipo incorreto.");
+        }
+        if (!esperada.getCorrelacaoId().equals(atual.getCorrelacaoId())) {
+            throw new IllegalStateException("Falha no teste de reply: correlação diferente.");
+        }
+        if (!esperada.getResposta().equals(atual.getResposta())) {
+            throw new IllegalStateException("Falha no teste de reply: resposta diferente.");
         }
     }
 }

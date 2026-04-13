@@ -65,4 +65,25 @@ public class Message implements Serializable {
     public void setDataHora(LocalDateTime dataHora) {
         this.dataHora = Objects.requireNonNull(dataHora, "dataHora não pode ser nula");
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Message)) {
+            return false;
+        }
+        Message message = (Message) o;
+        return id.equals(message.id)
+                && remetenteId.equals(message.remetenteId)
+                && remetenteNome.equals(message.remetenteNome)
+                && conteudo.equals(message.conteudo)
+                && dataHora.equals(message.dataHora);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, remetenteId, remetenteNome, conteudo, dataHora);
+    }
 }
