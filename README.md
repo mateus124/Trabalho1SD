@@ -2,54 +2,121 @@
 
 Dupla: Francisco Mateus | Mateus Dodo
 
-## Aplicacao
+## Visao Geral
 
-Sistema de chat via TCP com serializacao de objetos usando ObjectOutputStream e ObjectInputStream.
+Sistema de chat em terminal via TCP, com comunicacao baseada em objetos serializados usando ObjectOutputStream e ObjectInputStream.
 
-## Repositorio Core
+## Funcionalidades Atuais
 
-O modulo core concentra as entidades de dominio do chat e a interface principal de operacoes.
+- Registro de usuario ao conectar no servidor.
+- Menu interativo no cliente via terminal.
+- Envio de mensagem em broadcast para todos conectados.
+- Listagem de usuarios conectados.
+- Chat privado entre dois usuarios conectados.
+- Listagem de grupos disponiveis.
+- Entrada em grupos predefinidos.
+- Envio de mensagens para grupo (apenas para membros).
+- Saida de conversa privada ou grupo para o menu principal com os comandos: /voltar, voltar, sair ou 0.
 
-### Estrutura criada
+## Grupos Predefinidos
 
-- src/main/java/br/ufc/quixada/chat/core/interface/ChatInterface.java
-- src/main/java/br/ufc/quixada/chat/core/model/Chat.java
-- src/main/java/br/ufc/quixada/chat/core/model/SingleChat.java
-- src/main/java/br/ufc/quixada/chat/core/model/GroupChat.java
+- geral
+- turma
+- projeto
+
+## Arquitetura
+
+### Cliente
+
+- Interface textual com menu principal e subfluxos de conversa.
+- Thread dedicada para ouvir mensagens recebidas em paralelo ao input do usuario.
+
+### Servidor
+
+- Aceita conexoes TCP concorrentes.
+- Mantem usuarios online e associa cada usuario ao seu ClientHandler.
+- Mantem mapa de grupos e participantes.
+- Roteia mensagens de acordo com a acao recebida.
+
+### Modelo de Dominio
+
+- Chat (abstrata): comportamento comum.
+- SingleChat: chat de dois participantes.
+- GroupChat: gerenciamento dinamico de participantes.
+- Message e User: entidades principais de mensagem e usuario.
+
+## Protocolo de Comunicacao
+
+Pacotes serializados com a classe ChatPacket.
+
+### Tipo
+
+- REQUEST
+- REPLY
+
+### Acoes suportadas
+
+- REGISTER
+- BROADCAST
+- LIST_USERS
+- LIST_GROUPS
+- JOIN_GROUP
+- PRIVATE_MESSAGE
+- GROUP_MESSAGE
+- DISCONNECT
+- SYSTEM
+
+## Estrutura Principal
+
+- src/main/java/br/ufc/quixada/chat/client/ChatClient.java
+- src/main/java/br/ufc/quixada/chat/server/ChatServer.java
+- src/main/java/br/ufc/quixada/chat/server/ClientHandler.java
+- src/main/java/br/ufc/quixada/chat/core/model/ChatPacket.java
 - src/main/java/br/ufc/quixada/chat/core/model/Message.java
 - src/main/java/br/ufc/quixada/chat/core/model/User.java
+- src/main/java/br/ufc/quixada/chat/core/model/GroupChat.java
+- src/main/java/br/ufc/quixada/chat/core/model/SingleChat.java
 
-## Modelo de classes
+## Como Executar
 
-### Superclasse
+### 1) Compilar
 
-- Chat
+No PowerShell, na raiz do projeto:
 
-### Subclasses
+```powershell
+$out = Join-Path $PWD "out"
+if (Test-Path $out) { Remove-Item $out -Recurse -Force }
+New-Item -ItemType Directory -Path $out | Out-Null
+$sources = Get-ChildItem -Recurse -Filter *.java .\src\main\java | ForEach-Object { $_.FullName }
+javac -d $out $sources
+```
 
-- SingleChat
-- GroupChat
+### 2) Subir o servidor
 
-### Agregacao
+```powershell
+java -cp out br.ufc.quixada.chat.server.ChatServer
+```
 
-- Chat possui um conjunto de Messages.
-- GroupChat possui um conjunto de Users.
-- Users participam de Chats (single ou grupo).
+### 3) Subir cliente(s)
 
-### Interface
+Em outro terminal:
 
-ChatInterface define:
+```powershell
+java -cp out br.ufc.quixada.chat.client.ChatClient
+```
 
-- enviarMensagem(...)
-- deletarMensagem(...)
-- listarMensagens()
-- gerenciarUsuarios(...)
+Opcional (host e porta):
 
-## Observacoes de implementacao
+```powershell
+java -cp out br.ufc.quixada.chat.client.ChatClient localhost 12345
+```
 
-- O Chat e abstrato e concentra comportamento comum para mensagens.
-- SingleChat limita o chat a dois participantes.
-- GroupChat gerencia participantes de forma dinamica.
-- O protocolo de rede usa ChatPacket com request/reply para empacotar e desempacotar mensagens.
-- O cliente em terminal oferece broadcast, listagem de conectados, chat privado e entrada em grupos predefinidos.
-- Os grupos iniciais sao `geral`, `turma` e `projeto`.
+## Fluxo Rapido de Uso
+
+1. Inicie o servidor.
+2. Inicie dois ou mais clientes.
+3. Registre nomes diferentes.
+4. Use a opcao 2 para listar conectados.
+5. Use a opcao 3 para chat privado.
+6. Use a opcao 4 e 5 para listar/entrar em grupos.
+7. Dentro de privado ou grupo, use /voltar para retornar ao menu.
