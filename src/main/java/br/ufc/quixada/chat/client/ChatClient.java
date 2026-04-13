@@ -23,14 +23,23 @@ public class ChatClient {
     private static final String HOST_PADRAO = "localhost";
     private static final int PORTA_PADRAO = 12345;
     private static final long TIMEOUT_SEGUNDOS = 5L;
+    private static final String ANSI_RESET = "\u001B[0m";
+    private static final String ANSI_BOLD = "\u001B[1m";
+    private static final String ANSI_CYAN = "\u001B[36m";
+    private static final String ANSI_GREEN = "\u001B[32m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
+    private static final String ANSI_MAGENTA = "\u001B[35m";
+    private static final String ANSI_BLUE = "\u001B[34m";
+    private static final String ANSI_RED = "\u001B[31m";
+    private static final String ANSI_WHITE = "\u001B[37m";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         String host = args.length > 0 ? args[0] : HOST_PADRAO;
         int porta = args.length > 1 ? Integer.parseInt(args[1]) : PORTA_PADRAO;
 
-        System.out.println("=== BEM-VINDO AO M2TALK ===");
-        System.out.print("Digite seu nome: ");
+        System.out.println(colorir("=== BEM-VINDO AO M2TALK ===", ANSI_BOLD + ANSI_CYAN));
+        System.out.print(colorir("Digite seu nome: ", ANSI_WHITE));
         String nome = scanner.nextLine();
         User usuarioAtivo = new User(nome);
         Map<String, CompletableFuture<ChatPacket>> pendencias = new ConcurrentHashMap<>();
@@ -45,7 +54,7 @@ public class ChatClient {
             listenerThread.start();
 
             ChatPacket respostaRegistro = enviarEEsperar(output, pendencias, ChatPacket.requestRegister(usuarioAtivo));
-            System.out.println("[Servidor] " + respostaRegistro.getResposta());
+            imprimirServidor(respostaRegistro.getResposta());
 
             while (executando) {
                 mostrarMenu();
@@ -72,15 +81,15 @@ public class ChatClient {
                         executando = false;
                         break;
                     default:
-                        System.out.println("Opção inválida.");
+                        imprimirErro("Opção inválida.");
                         break;
                 }
             }
 
         } catch (IOException e) {
-            System.out.println("Erro ao conectar ao servidor: Verifique se o ChatServer está rodando.");
+            imprimirErro("Erro ao conectar ao servidor: Verifique se o ChatServer está rodando.");
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            System.out.println("Erro ao trocar mensagens com o servidor: " + e.getMessage());
+            imprimirErro("Erro ao trocar mensagens com o servidor: " + e.getMessage());
         } finally {
             scanner.close();
         }
@@ -88,13 +97,13 @@ public class ChatClient {
 
     private static void mostrarMenu() {
         System.out.println();
-        System.out.println("1. Enviar broadcast para todos");
-        System.out.println("2. Ver quem esta conectado");
-        System.out.println("3. Abrir chat privado");
-        System.out.println("4. Ver grupos disponiveis");
-        System.out.println("5. Entrar em um grupo");
-        System.out.println("6. Sair");
-        System.out.print("Escolha: ");
+        System.out.println(colorir("1. Enviar broadcast para todos", ANSI_WHITE));
+        System.out.println(colorir("2. Ver quem esta conectado", ANSI_WHITE));
+        System.out.println(colorir("3. Abrir chat privado", ANSI_WHITE));
+        System.out.println(colorir("4. Ver grupos disponiveis", ANSI_WHITE));
+        System.out.println(colorir("5. Entrar em um grupo", ANSI_WHITE));
+        System.out.println(colorir("6. Sair", ANSI_WHITE));
+        System.out.print(colorir("Escolha: ", ANSI_BOLD + ANSI_CYAN));
     }
 
     private static void ouvirMensagens(MessageInputStream input, Map<String, CompletableFuture<ChatPacket>> pendencias, User usuarioAtivo, Socket socket) {
@@ -118,7 +127,7 @@ public class ChatClient {
             }
         } catch (IOException | ClassNotFoundException e) {
             if (!socket.isClosed()) {
-                System.out.println("\n[Aviso] Conexão com o servidor encerrada.");
+                imprimirErro("Conexão com o servidor encerrada.");
             }
         }
     }
@@ -129,32 +138,32 @@ public class ChatClient {
 
             switch (pacote.getAcao()) {
                 case BROADCAST:
-                    System.out.println("\n[Broadcast] " + mensagem.getRemetenteNome() + ": " + mensagem.getConteudo());
+                    imprimirBroadcast(mensagem.getRemetenteNome(), mensagem.getConteudo());
                     break;
                 case PRIVATE_MESSAGE:
                     if (usuarioAtivo.getId().equals(pacote.getDestinoId())) {
-                        System.out.println("\n[Privado] de " + mensagem.getRemetenteNome() + ": " + mensagem.getConteudo());
+                        imprimirPrivado("de " + mensagem.getRemetenteNome(), mensagem.getConteudo());
                     } else {
-                        System.out.println("\n[Privado] para " + pacote.getDestinoId() + ": " + mensagem.getConteudo());
+                        imprimirPrivado("para " + pacote.getDestinoId(), mensagem.getConteudo());
                     }
                     break;
                 case GROUP_MESSAGE:
-                    System.out.println("\n[Grupo " + pacote.getGrupoId() + "] " + mensagem.getRemetenteNome() + ": " + mensagem.getConteudo());
+                    imprimirGrupo(pacote.getGrupoId(), mensagem.getRemetenteNome(), mensagem.getConteudo());
                     break;
                 default:
-                    System.out.println("\n[Mensagem] " + mensagem.getRemetenteNome() + ": " + mensagem.getConteudo());
+                    imprimirSistema("[Mensagem] " + mensagem.getRemetenteNome() + ": " + mensagem.getConteudo());
                     break;
             }
             return;
         }
 
         if (pacote.getResposta() != null) {
-            System.out.println("\n[Sistema] " + pacote.getResposta());
+            imprimirSistema(pacote.getResposta());
         }
     }
 
     private static void enviarBroadcast(Scanner scanner, MessageOutputStream output, User usuarioAtivo) throws IOException {
-        System.out.print("Mensagem do broadcast: ");
+        System.out.print(colorir("Mensagem do broadcast: ", ANSI_BOLD + ANSI_YELLOW));
         String texto = scanner.nextLine();
         if (texto.isBlank()) {
             return;
@@ -168,11 +177,11 @@ public class ChatClient {
         ChatPacket resposta = enviarEEsperar(output, pendencias, ChatPacket.requestListUsers(usuarioAtivo.getId()));
         List<String> usuarios = resposta.getItens();
 
-        System.out.println("\n=== Conectados ===");
+        System.out.println("\n" + colorir("=== Conectados ===", ANSI_BOLD + ANSI_CYAN));
         for (String entrada : usuarios) {
             String[] partes = entrada.split("\\|", 2);
             if (partes.length == 2) {
-                System.out.println(partes[1] + " - " + partes[0]);
+                System.out.println(colorir(partes[1] + " - " + partes[0], ANSI_WHITE));
             }
         }
     }
@@ -181,11 +190,11 @@ public class ChatClient {
         ChatPacket resposta = enviarEEsperar(output, pendencias, ChatPacket.requestListGroups(usuarioAtivo.getId()));
         List<String> grupos = resposta.getItens();
 
-        System.out.println("\n=== Grupos ===");
+        System.out.println("\n" + colorir("=== Grupos ===", ANSI_BOLD + ANSI_CYAN));
         for (String entrada : grupos) {
             String[] partes = entrada.split("\\|", 2);
             if (partes.length == 2) {
-                System.out.println(partes[0] + " - " + partes[1] + " membros");
+                System.out.println(colorir(partes[0] + " - " + partes[1] + " membros", ANSI_WHITE));
             }
         }
     }
@@ -195,7 +204,7 @@ public class ChatClient {
         List<EntradaLista> usuarios = converterUsuarios(resposta.getItens(), usuarioAtivo.getId());
 
         if (usuarios.isEmpty()) {
-            System.out.println("Nenhum outro usuario conectado.");
+            imprimirSistema("Nenhum outro usuario conectado.");
             return;
         }
 
@@ -213,7 +222,7 @@ public class ChatClient {
         List<EntradaLista> grupos = converterGrupos(resposta.getItens());
 
         if (grupos.isEmpty()) {
-            System.out.println("Nenhum grupo disponivel.");
+            imprimirSistema("Nenhum grupo disponivel.");
             return;
         }
 
@@ -223,23 +232,23 @@ public class ChatClient {
         }
 
         ChatPacket respostaEntrada = enviarEEsperar(output, pendencias, ChatPacket.requestJoinGroup(usuarioAtivo.getId(), selecionado.id));
-        System.out.println("[Servidor] " + respostaEntrada.getResposta());
+        imprimirServidor(respostaEntrada.getResposta());
 
         conversar(scanner, output, usuarioAtivo, "Grupo " + selecionado.nome, (texto, mensagem) ->
                 ChatPacket.requestGroupMessage(mensagem, selecionado.id));
     }
 
     private static void conversar(Scanner scanner, MessageOutputStream output, User usuarioAtivo, String titulo, CriadorPacote criadorPacote) throws IOException {
-        System.out.println("\n=== " + titulo + " ===");
-        System.out.println("Digite uma mensagem ou /voltar, voltar, sair ou 0 para retornar ao menu.");
+        System.out.println("\n" + colorir("=== " + titulo + " ===", ANSI_BOLD + ANSI_CYAN));
+        System.out.println(colorir("Digite uma mensagem ou /voltar, voltar, sair ou 0 para retornar ao menu.", ANSI_WHITE));
 
         while (true) {
-            System.out.print(titulo + ": ");
+            System.out.print(colorir(titulo + ": ", ANSI_BOLD + ANSI_CYAN));
             String texto = scanner.nextLine();
             String comando = texto.trim();
 
             if (ehComandoDeRetorno(comando)) {
-                System.out.println("Retornando ao menu principal...");
+                imprimirSistema("Retornando ao menu principal...");
                 return;
             }
 
@@ -296,12 +305,12 @@ public class ChatClient {
     }
 
     private static EntradaLista selecionarEntrada(Scanner scanner, List<EntradaLista> entradas, String titulo) {
-        System.out.println("\n=== " + titulo + " ===");
+        System.out.println("\n" + colorir("=== " + titulo + " ===", ANSI_BOLD + ANSI_CYAN));
         for (int i = 0; i < entradas.size(); i++) {
             EntradaLista entrada = entradas.get(i);
-            System.out.println((i + 1) + ". " + entrada.nome);
+            System.out.println(colorir((i + 1) + ". " + entrada.nome, ANSI_WHITE));
         }
-        System.out.print("Escolha um numero ou 0 para cancelar: ");
+        System.out.print(colorir("Escolha um numero ou 0 para cancelar: ", ANSI_BOLD + ANSI_CYAN));
 
         String valor = scanner.nextLine().trim();
         int indice;
@@ -334,6 +343,34 @@ public class ChatClient {
                 || "voltar".equalsIgnoreCase(comando)
                 || "sair".equalsIgnoreCase(comando)
                 || "0".equals(comando);
+    }
+
+    private static void imprimirServidor(String mensagem) {
+        System.out.println("\n" + colorir("[Servidor] " + mensagem, ANSI_GREEN));
+    }
+
+    private static void imprimirSistema(String mensagem) {
+        System.out.println("\n" + colorir("[Sistema] " + mensagem, ANSI_BLUE));
+    }
+
+    private static void imprimirErro(String mensagem) {
+        System.out.println("\n" + colorir("[Erro] " + mensagem, ANSI_RED));
+    }
+
+    private static void imprimirBroadcast(String remetente, String conteudo) {
+        System.out.println("\n" + colorir("[Broadcast] " + remetente + ": " + conteudo, ANSI_YELLOW));
+    }
+
+    private static void imprimirPrivado(String direcao, String conteudo) {
+        System.out.println("\n" + colorir("[Privado] " + direcao + ": " + conteudo, ANSI_MAGENTA));
+    }
+
+    private static void imprimirGrupo(String grupoId, String remetente, String conteudo) {
+        System.out.println("\n" + colorir("[Grupo " + grupoId + "] " + remetente + ": " + conteudo, ANSI_CYAN));
+    }
+
+    private static String colorir(String texto, String cor) {
+        return cor + texto + ANSI_RESET;
     }
 
     private interface CriadorPacote {
